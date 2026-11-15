@@ -12,5 +12,5 @@ select
 
 
 FROM
-'../data/raw/raw_job_postings_*.parquet'
+{{source('raw', 'job_postings')}}
 WHERE error is NULL
