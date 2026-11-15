@@ -6,7 +6,11 @@ on:
   push:
     branches: [master]
     paths:
-      - 'project_1/**'
+      - 'analytics/**'
+      - 'scripts/**'
+      - 'ci/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
       - '.github/workflows/dbt_build.yml'
   schedule:
     - cron: '17 6 * * 1'    # Mondays — the pipeline runs while you sleep
@@ -16,16 +20,13 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: project_1
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - run: uv sync
       - run: uv run python scripts/download_data.py
       - run: uv run dbt build --profiles-dir ../ci
-        working-directory: project_1/analytics
+        working-directory: analytics
       # Monorepo-only (not in the student copy): store job_postings as a table in
       # the published warehouse, so a remote ATTACH can query it. The model stays
       # a view in the course code. duckdb pinned to the version this was tested on.
@@ -38,7 +39,7 @@ jobs:
           con.execute('ALTER TABLE job_postings__tbl RENAME TO job_postings')
           con.close()
           PY
-        working-directory: project_1/analytics
+        working-directory: analytics
       - run: |
           gh release create warehouse --notes "Warehouse — auto-built by dbt" || true
           gh release upload warehouse data/prod.duckdb --clobber
